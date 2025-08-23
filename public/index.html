@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anonymous Recruitment Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .slide-transition {
+            transition: transform 0.3s ease-in-out;
+        }
+        .swipe-card {
+            transition: transform 0.3s ease-in-out;
+        }
+        .swipe-left {
+            transform: translateX(-100%);
+        }
+        .swipe-right {
+            transform: translateX(100%);
+        }
+        .card-container {
+            perspective: 1000px;
+        }
+        .card {
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+        }
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+        .card-front, .card-back {
+            backface-visibility: hidden;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        .card-back {
+            transform: rotateY(180deg);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="fixed inset-0 bg-white z-50 flex items-center justify-center">
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto"></div>
+            <p class="mt-4 text-gray-600">Loading...</p>
+        </div>
+    </div>
+
+    <!-- Role Selection Page -->
+    <div id="roleSelection" class="hidden min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div class="max-w-md w-full mx-4">
+            <div class="text-center mb-8">
+                <h1 class="text-4xl font-bold text-gray-800 mb-2">Anonymous Recruitment</h1>
+                <p class="text-gray-600">Choose your role to get started</p>
+            </div>
+            
+            <div class="space-y-4">
+                <button onclick="selectRole('employer')" class="w-full bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow border-2 border-transparent hover:border-blue-200">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-building text-blue-600 text-xl"></i>
+                        </div>
+                        <div class="text-left">
+                            <h3 class="text-lg font-semibold text-gray-800">I am an Employer</h3>
+                            <p class="text-gray-600 text-sm">Post jobs and find talent</p>
+                        </div>
+                    </div>
+                </button>
+                
+                <button onclick="selectRole('jobseeker')" class="w-full bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow border-2 border-transparent hover:border-green-200">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-user-tie text-green-600 text-xl"></i>
+                        </div>
+                        <div class="text-left">
+                            <h3 class="text-lg font-semibold text-gray-800">I am a Jobseeker</h3>
+                            <p class="text-gray-600 text-sm">Find jobs and get hired</p>
+                        </div>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Auth Page -->
+    <div id="authPage" class="hidden min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div class="max-w-md w-full mx-4">
+            <div class="text-center mb-8">
+                <h2 id="authTitle" class="text-3xl font-bold text-gray-800 mb-2">Welcome</h2>
+                <p id="authSubtitle" class="text-gray-600">Sign in to your account</p>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <div id="authTabs" class="flex mb-6">
+                    <button onclick="showLogin()" id="loginTab" class="flex-1 py-2 px-4 text-center border-b-2 border-blue-500 text-blue-600 font-medium">Login</button>
+                    <button onclick="showSignup()" id="signupTab" class="flex-1 py-2 px-4 text-center border-b-2 border-transparent text-gray-500">Sign Up</button>
+                </div>
+                
+                <!-- Login Form -->
+                <form id="loginForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                        <input type="email" id="loginEmail" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                        <input type="password" id="loginPassword" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
+                        Login
+                    </button>
+                </form>
+                
+                <!-- Signup Form -->
+                <form id="signupForm" class="hidden space-y-4">
+                    <div id="employerFields" class="hidden space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
+                            <input type="text" id="companyName" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Designation</label>
+                            <input type="text" id="designation" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                        <input type="text" id="fullName" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                        <input type="email" id="signupEmail" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                        <input type="password" id="signupPassword" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Retype Password</label>
+                        <input type="password" id="retypePassword" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <button type="submit" class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors">
+                        Create Account
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="dashboard" class="hidden min-h-screen bg-gray-50">
+        <!-- Navigation -->
+        <nav class="bg-white shadow-sm border-b">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <h1 class="text-xl font-semibold text-gray-800">Anonymous Recruitment</h1>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <button id="messagesBtn" class="relative p-2 text-gray-600 hover:text-gray-800">
+                            <i class="fas fa-envelope text-xl"></i>
+                            <span id="unreadBadge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">0</span>
+                        </button>
+                        <button id="profileBtn" class="p-2 text-gray-600 hover:text-gray-800">
+                            <i class="fas fa-user text-xl"></i>
+                        </button>
+                        <button id="logoutBtn" class="p-2 text-gray-600 hover:text-gray-800">
+                            <i class="fas fa-sign-out-alt text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Content Area -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Dashboard Content -->
+            <div id="dashboardContent">
+                <!-- Will be populated by JavaScript -->
+            </div>
+
+            <!-- CV Creation/Editing (Jobseekers) -->
+            <div id="cvSection" class="hidden">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-2xl font-bold mb-6">Create Your Anonymous CV</h2>
+                    <form id="cvForm" class="space-y-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Education</label>
+                            <textarea id="cvEducation" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter your educational background..."></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Experience</label>
+                            <textarea id="cvExperience" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter your work experience..."></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Skills</label>
+                            <textarea id="cvSkills" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter your skills..."></textarea>
+                        </div>
+                        <button type="submit" class="bg-blue-600 text-white py-2 px-6 rounded-md hover:bg-blue-700 transition-colors">
+                            Save CV
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Job Creation (Employers) -->
+            <div id="jobCreationSection" class="hidden">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-2xl font-bold mb-6">Post a New Job</h2>
+                    <form id="jobForm" class="space-y-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Job Title</label>
+                            <input type="text" id="jobTitle" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Responsibilities</label>
+                            <textarea id="jobResponsibilities" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter job responsibilities..."></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Requirements</label>
+                            <textarea id="jobRequirements" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter job requirements..."></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Salary</label>
+                            <input type="text" id="jobSalary" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g., $50,000 - $70,000">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                            <input type="text" id="jobLocation" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g., New York, NY">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Job Type</label>
+                            <select id="jobType" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="full-time">Full-time</option>
+                                <option value="part-time">Part-time</option>
+                                <option value="contract">Contract</option>
+                                <option value="internship">Internship</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="bg-green-600 text-white py-2 px-6 rounded-md hover:bg-green-700 transition-colors">
+                            Post Job
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Swipe Interface -->
+            <div id="swipeInterface" class="hidden">
+                <div class="max-w-md mx-auto">
+                    <div class="mb-4 text-center">
+                        <button onclick="testShowSwipe()" class="bg-red-500 text-white px-4 py-2 rounded-md">
+                            TEST: Show Swipe Interface
+                        </button>
+                    </div>
+                    <div class="card-container">
+                        <div id="swipeCard" class="card bg-white rounded-lg shadow-lg overflow-hidden">
+                            <div class="card-front">
+                                <div id="cardContent" class="p-6">
+                                    <!-- Card content will be populated by JavaScript -->
+                                </div>
+                                <div class="flex justify-center space-x-4 p-4 bg-gray-50">
+                                    <button onclick="swipeLeft()" class="w-12 h-12 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                    <button onclick="flipCard()" class="w-12 h-12 bg-gray-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </button>
+                                    <button onclick="swipeRight()" class="w-12 h-12 bg-green-500 text-white rounded-full flex items-center justify-center hover:bg-green-600 transition-colors">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-back">
+                                <div id="cardBackContent" class="p-6">
+                                    <!-- Back card content will be populated by JavaScript -->
+                                </div>
+                                <div class="flex justify-center space-x-4 p-4 bg-gray-50">
+                                    <button onclick="swipeLeft()" class="w-12 h-12 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                    <button onclick="flipCard()" class="w-12 h-12 bg-gray-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </button>
+                                    <button onclick="swipeRight()" class="w-12 h-12 bg-green-500 text-white rounded-full flex items-center justify-center hover:bg-green-600 transition-colors">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Messages Section -->
+            <div id="messagesSection" class="hidden">
+                <div class="bg-white rounded-lg shadow">
+                    <div class="border-b p-4">
+                        <h2 class="text-xl font-semibold">Messages</h2>
+                    </div>
+                    <div id="conversationsList" class="divide-y">
+                        <!-- Conversations will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Section -->
+            <div id="chatSection" class="hidden">
+                <div class="bg-white rounded-lg shadow h-96 flex flex-col">
+                    <div class="border-b p-4">
+                        <h3 id="chatTitle" class="text-lg font-semibold">Chat</h3>
+                    </div>
+                    <div id="chatMessages" class="flex-1 overflow-y-auto p-4 space-y-4">
+                        <!-- Messages will be populated by JavaScript -->
+                    </div>
+                    <div class="border-t p-4">
+                        <form id="messageForm" class="flex space-x-2">
+                            <input type="text" id="messageInput" placeholder="Type your message..." class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
+                                Send
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html> 
