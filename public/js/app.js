@@ -573,6 +573,7 @@ async function showJobSwipe() {
         const response = await fetch(`${API_BASE}/jobs/all`, { credentials: 'include' });
         if (response.ok) {
             const data = await response.json();
+            console.log('Jobs loaded:', data);
             currentJobs = data.jobs;
             currentCardIndex = 0;
             currentSlideIndex = 0;
@@ -669,6 +670,10 @@ function displayCurrentCV() {
 
 // Display current job
 function displayCurrentJob() {
+    console.log('displayCurrentJob called');
+    console.log('currentCardIndex:', currentCardIndex);
+    console.log('currentJobs length:', currentJobs.length);
+    console.log('currentJobs:', currentJobs);
     if (currentCardIndex >= currentJobs.length) {
         document.getElementById('cardContent').innerHTML = `
             <div class="text-center py-12">
@@ -1054,9 +1059,17 @@ function testShowSwipe() {
     if (swipeInterface) {
         swipeInterface.classList.remove('hidden');
         console.log('Test: Swipe interface shown manually');
+
+        if (currentJobs && currentJobs.length > 0) {
+            currentCardIndex = 0;
+            currentSlideIndex = 0;
+            displayCurrentJob();
+            console.log("display current job is called");
+        }
         
         // Add some test content
-        document.getElementById('cardContent').innerHTML = `
+        else {
+            document.getElementById('cardContent').innerHTML = `
             <div class="text-center py-12">
                 <h3 class="text-xl font-semibold text-gray-800 mb-4">Test CV Interface</h3>
                 <p class="text-gray-600">If you can see this, the swipe interface is working!</p>
@@ -1068,6 +1081,9 @@ function testShowSwipe() {
                 </div>
             </div>
         `;
+            
+        }
+        
     } else {
         console.error('Test: Swipe interface element not found!');
     }
